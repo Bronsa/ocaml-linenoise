@@ -810,7 +810,10 @@ void linenoiseReverseIncrementalSearch(struct linenoiseState *l) {
     else
       prompt = "(reverse-i-search)`%s': ";
 
-    snprintf(search_prompt, sizeof(search_prompt), prompt, search_buf);
+    if (!snprintf(search_prompt, sizeof(search_prompt), prompt, search_buf)) {
+      linenoiseBeep();
+      break;
+    }
 
     l->pos = 0;
     refreshLinePrompt(l, search_prompt);
@@ -818,8 +821,12 @@ void linenoiseReverseIncrementalSearch(struct linenoiseState *l) {
     char c;
     int new_char = 0;
 
-    if (read(l->ifd, &c, 1) <= 0)
+    if (read(l->ifd, &c, 1) <= 0) {
+      l->pos = l->len = snprintf(l->buf, l->buflen, "%s", buf);
+      refreshLine(l);
+      free(buf);
       return;
+    }
 
     switch(c) {
     case BACKSPACE:
@@ -840,9 +847,11 @@ void linenoiseReverseIncrementalSearch(struct linenoiseState *l) {
       search_dir = 1;
       if (search_pos < 0)
         search_pos = 0;
+      break;
     case CTRL_G:
       l->pos = l->len = snprintf(l->buf, l->buflen, "%s", buf);
       refreshLine(l);
+      free(buf);
       return;
     default:
       if (c >= ' ') {
@@ -852,6 +861,7 @@ void linenoiseReverseIncrementalSearch(struct linenoiseState *l) {
         search_pos = history_len - 1;
         break;
       } else {
+        free(buf);
         l->pos = l->len;
         refreshLine(l);
         return;
