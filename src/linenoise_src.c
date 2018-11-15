@@ -848,24 +848,23 @@ void linenoiseReverseIncrementalSearch(struct linenoiseState *l) {
       if (search_pos < 0)
         search_pos = 0;
       break;
+    case ESC:
     case CTRL_G:
       l->pos = l->len = snprintf(l->buf, l->buflen, "%s", buf);
       refreshLine(l);
       free(buf);
       return;
+    case ENTER:
+      free(buf);
+      l->pos = l->len;
+      refreshLine(l);
+      return;
     default:
-      if (c >= ' ') {
-        new_char = 1;
-        search_buf[search_len] = c;
-        search_buf[++search_len] = 0;
-        search_pos = history_len - 1;
-        break;
-      } else {
-        free(buf);
-        l->pos = l->len;
-        refreshLine(l);
-        return;
-      }
+      new_char = 1;
+      search_buf[search_len] = c;
+      search_buf[++search_len] = 0;
+      search_pos = history_len - 1;
+      break;
     }
 
     has_match = 0;
